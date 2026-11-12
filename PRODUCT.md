@@ -36,7 +36,7 @@ Used in the browser on desktop and phone. People share the result by sending the
 - Import/export periods as JSON; export PNG via canvas.
 - No server: data lives only in the viewer's browser (localStorage). Sharing happens through files.
 - Must work well on mobile.
-- Planned: state and municipal holidays (not yet implemented; requires a way to choose state/city).
+- State and municipal holidays: only São Paulo so far (state holiday 9 July; city holidays 25 January and Corpus Christi), chosen in a "Feriados considerados" selector; they count as days off like national ones.
 - No example periods on first load: the page starts empty.
 
 ## Evidence on Hand

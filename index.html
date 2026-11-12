@@ -28,6 +28,9 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);
 .wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
 h1{font-family:var(--display);font-size:1.9rem;margin:0;text-wrap:balance}
 .sub{color:var(--muted);margin:4px 0 0}
+.loc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.loc label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.loc select{width:auto;min-width:min(100%,260px)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
 .ct{font-family:var(--display);margin:0 0 12px;font-size:1rem}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--p0);outline-offset:2px}
@@ -136,6 +139,12 @@ ul.l li small{color:var(--muted);display:block}
   <header>
     <h1>Calendário de Períodos</h1>
     <p class="sub">Dias corridos, incluindo fins de semana. O dia de início conta como o 1º dia.</p>
+    <div class="loc"><label for="loc">Feriados considerados</label>
+      <select id="loc">
+        <option value="nac">Só feriados nacionais</option>
+        <option value="sp">Nacionais + estado de São Paulo</option>
+        <option value="spc">Nacionais + estado e cidade de São Paulo</option>
+      </select></div>
   </header>
 
   <section class="card">
@@ -155,10 +164,10 @@ ul.l li small{color:var(--muted);display:block}
     <span><i class="sw edge"></i>Início / fim</span>
     <span><i class="sw in"></i>Dentro do período</span>
     <span><i class="sw br"></i>Folga emendada</span>
-    <span><i class="sw hol"></i>Feriado nacional</span>
+    <span><i class="sw hol"></i>Feriado</span>
     <span><i class="sw fac"></i>Ponto facultativo</span>
   </div>
-  <p class="note">Folga emendada são os fins de semana e feriados nacionais colados ao período. Ponto facultativo não entra na conta, porque depende do empregador. Pela CLT, as férias não podem começar nos 2 dias antes de feriado ou fim de semana.</p>
+  <p class="note">Folga emendada são os fins de semana e feriados colados ao período. Ponto facultativo não entra na conta, porque depende do empregador. Pela CLT, as férias não podem começar nos 2 dias antes de feriado ou fim de semana.</p>
 
   <nav class="yearnav" aria-label="Ano">
     <button type="button" class="ybtn" id="prev" aria-label="Ano anterior" title="Ano anterior (tecla ←)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -173,7 +182,7 @@ ul.l li small{color:var(--muted);display:block}
   <div class="lists">
     <div class="card"><h2 class="ct">Resumo</h2><ul class="l" id="plist"></ul></div>
     <div class="card"><h2 class="ct" id="htitle">Feriados</h2><ul class="l" id="hlist"></ul>
-      <p class="note">Feriados estaduais e municipais não estão incluídos.</p></div>
+      <p class="note" id="locnote"></p></div>
   </div>
 </div>
 <script>
@@ -208,6 +217,14 @@ function range(p){
 }
 
 function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return iso(new Date(y,mo-1,da))}
+// Feriados estaduais e municipais disponíveis (por enquanto, só São Paulo)
+const LOCAIS={
+  nac:{nome:"só feriados nacionais"},
+  sp:{nome:"nacionais + estado de São Paulo"},
+  spc:{nome:"nacionais + estado e cidade de São Paulo"}
+};
+const LKEY="calendario-local-v1";
+let local="nac";try{const v=localStorage.getItem(LKEY);if(LOCAIS[v])local=v}catch(e){}
 function holidays(y){
   const e=easter(y),o={};
   o[`${y}-01-01`]="Confraternização Universal";
@@ -216,12 +233,18 @@ function holidays(y){
   o[`${y}-04-21`]="Tiradentes";o[`${y}-05-01`]="Dia do Trabalho";o[addDays(e,60)]="Corpus Christi";
   o[`${y}-09-07`]="Independência";o[`${y}-10-12`]="Nossa Senhora Aparecida";o[`${y}-11-02`]="Finados";
   o[`${y}-11-15`]="Proclamação da República";if(y>=2024)o[`${y}-11-20`]="Consciência Negra";o[`${y}-12-25`]="Natal";
+  if(local==="sp"||local==="spc")o[`${y}-07-09`]="Revolução Constitucionalista (estadual)";
+  if(local==="spc"){
+    o[`${y}-01-25`]="Aniversário de São Paulo (municipal)";
+    o[addDays(e,60)]="Corpus Christi (municipal)"; // feriado na capital pela Lei municipal 14.485/2007
+    if(y<2024)o[`${y}-11-20`]="Consciência Negra (municipal)";
+  }
   return o;
 }
 
 // Feriados que garantem folga (ponto facultativo não conta), folga emendada e regra da CLT
 const FAC=new Set(["Carnaval (segunda)","Carnaval (terça)","Quarta-feira de Cinzas","Corpus Christi"]);
-const HC={},holOf=k=>{const y=+k.slice(0,4);return (HC[y]??=holidays(y))[k]};
+let HC={};const holOf=k=>{const y=+k.slice(0,4);return (HC[y]??=holidays(y))[k]};
 const offDay=k=>{const d=parse(k).getDay(),h=holOf(k);return d===0||d===6||(!!h&&!FAC.has(h))};
 // CLT art. 134 §3º: o início não pode cair nos 2 dias que antecedem feriado ou descanso semanal (nem num dia de folga)
 const cltOk=k=>!offDay(k)&&!offDay(addDays(k,1))&&!offDay(addDays(k,2));
@@ -399,7 +422,10 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft")go(viewYear-1);if(e.key==="ArrowRight")go(viewYear+1);
 });
 function syncActions(){const has=periods.some(range);["png","exp"].forEach(id=>{document.getElementById(id).disabled=!has})}
-function update(follow){save();renderEditor();renderCalendar();syncActions();if(follow!==undefined)reveal(follow,false)}
+function update(follow){const locEl=document.getElementById("loc");locEl.value=local;
+function syncLocNote(){document.getElementById("locnote").textContent=local==="nac"?"Feriados estaduais e municipais não estão incluídos. Escolha São Paulo em “Feriados considerados” para incluí-los.":local==="sp"?"Inclui o feriado estadual de São Paulo. Feriados municipais não estão incluídos.":"Inclui os feriados do estado e da cidade de São Paulo. Na capital, Corpus Christi é feriado municipal."}
+locEl.addEventListener("change",()=>{local=locEl.value;HC={};try{localStorage.setItem(LKEY,local)}catch(e){}syncLocNote();renderEditor();renderCalendar();msg(`Feriados considerados: ${LOCAIS[local].nome}.`)});
+syncLocNote();save();renderEditor();renderCalendar();syncActions();if(follow!==undefined)reveal(follow,false)}
 document.getElementById("add").addEventListener("click",()=>{
   const last=periods.map(range).filter(Boolean).map(r=>r[1]).sort().at(-1);
   let s=last?addDays(last,7):iso(new Date());
@@ -487,10 +513,13 @@ document.getElementById("png").addEventListener("click",()=>{
   let ly=pad+60+rows*mh+(rows-1)*gap+24;x.textAlign="left";
   used.forEach(i=>{const r=rs[i],n=diff(r[0],r[1])+1,L=restLen(r);x.fillStyle=V(`--p${periods[i].color}`);x.beginPath();x.arc(pad+6,ly-5,6,0,7);x.fill();
     x.fillStyle=V("--fg");x.font=F(500,14,body);x.fillText(`${fmt(r[0])} → ${fmt(r[1])}  ·  ${pl(n)}${L>n?`  ·  folga de ${L} dias`:""}`,pad+20,ly);ly+=28});
-  x.fillStyle=V("--muted");x.font=F(400,12,body);x.fillText("Contorno tracejado: folga emendada (fins de semana e feriados colados). Anel vermelho: feriado nacional; tracejado: ponto facultativo.",pad,ly+4);
+  x.fillStyle=V("--muted");x.font=F(400,12,body);x.fillText(`Feriados: ${LOCAIS[local].nome}. Contorno tracejado: folga emendada. Anel vermelho: feriado; tracejado: ponto facultativo.`,pad,ly+4);
   c.toBlob(bl=>{download("calendario.png",bl);msg(`Imagem baixada com ${months.length} mês(es).`)},"image/png");
 });
 const pad2=pad;
-save();renderEditor();renderCalendar();syncActions();
+const locEl=document.getElementById("loc");locEl.value=local;
+function syncLocNote(){document.getElementById("locnote").textContent=local==="nac"?"Feriados estaduais e municipais não estão incluídos. Escolha São Paulo em “Feriados considerados” para incluí-los.":local==="sp"?"Inclui o feriado estadual de São Paulo. Feriados municipais não estão incluídos.":"Inclui os feriados do estado e da cidade de São Paulo. Na capital, Corpus Christi é feriado municipal."}
+locEl.addEventListener("change",()=>{local=locEl.value;HC={};try{localStorage.setItem(LKEY,local)}catch(e){}syncLocNote();renderEditor();renderCalendar();msg(`Feriados considerados: ${LOCAIS[local].nome}.`)});
+syncLocNote();save();renderEditor();renderCalendar();syncActions();
 </script>
 </html>
