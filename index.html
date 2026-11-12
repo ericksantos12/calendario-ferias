@@ -147,7 +147,7 @@ function holidays(y){
   o[addDays(e,-2)]="Sexta-feira Santa";o[e]="Páscoa";
   o[`${y}-04-21`]="Tiradentes";o[`${y}-05-01`]="Dia do Trabalho";o[addDays(e,60)]="Corpus Christi";
   o[`${y}-09-07`]="Independência";o[`${y}-10-12`]="Nossa Senhora Aparecida";o[`${y}-11-02`]="Finados";
-  o[`${y}-11-15`]="Proclamação da República";o[`${y}-11-20`]="Consciência Negra";o[`${y}-12-25`]="Natal";
+  o[`${y}-11-15`]="Proclamação da República";if(y>=2024)o[`${y}-11-20`]="Consciência Negra";o[`${y}-12-25`]="Natal";
   return o;
 }
 
