@@ -85,8 +85,12 @@ ul.l li small{color:var(--muted);display:block}
     <div class="editor" id="editor"></div>
     <div class="actions" style="margin-top:12px">
       <button class="btn" id="add" type="button">+ Adicionar período</button>
-      <button class="btn ghost" id="reset" type="button">Restaurar exemplo</button>
+      <button class="btn ghost" id="imp" type="button">Importar</button>
+      <button class="btn ghost" id="exp" type="button">Exportar</button>
+      <button class="btn ghost" id="png" type="button">Exportar PNG</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
     </div>
+    <p class="note" id="msg" role="status"></p>
   </section>
 
   <div class="legend">
@@ -112,16 +116,13 @@ ul.l li small{color:var(--muted);display:block}
 </div>
 <script>
 const COLORS=6, KEY="calendario-periodos-v1";
-const DEFAULT=[
-  {start:"2027-01-25",mode:"days",days:5,end:"2027-01-29"},
-  {start:"2027-04-06",mode:"days",days:15,end:"2027-04-20"}
-];
+const DEFAULT=[];
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const DOWS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"], WD=["dom","seg","ter","qua","qui","sex","sáb"];
 
 let periods;
 try{periods=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!Array.isArray(periods)||!periods.length)periods=structuredClone(DEFAULT);
+if(!Array.isArray(periods))periods=structuredClone(DEFAULT);
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(periods))}catch(e){}};
 
 const pad=n=>String(n).padStart(2,"0");
@@ -222,7 +223,70 @@ document.getElementById("add").addEventListener("click",()=>{
   const s=last?addDays(last,7):iso(new Date());
   periods.push({start:s,mode:"days",days:7,end:addDays(s,6)});update();
 });
-document.getElementById("reset").addEventListener("click",()=>{periods=structuredClone(DEFAULT);update()});
+const msg=t=>{document.getElementById("msg").textContent=t};
+function download(name,blob){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+document.getElementById("exp").addEventListener("click",()=>{
+  if(!periods.length)return msg("Não há períodos para exportar.");
+  download("periodos.json",new Blob([JSON.stringify({versao:1,periodos:periods},null,2)],{type:"application/json"}));
+  msg(`${periods.length} período(s) exportado(s) para periodos.json.`);
+});
+const file=document.getElementById("file");
+document.getElementById("imp").addEventListener("click",()=>file.click());
+file.addEventListener("change",async()=>{
+  const f=file.files[0];file.value="";if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());const list=Array.isArray(data)?data:data.periodos;
+    if(!Array.isArray(list))throw 0;
+    const ok=list.filter(p=>p&&/^\d{4}-\d{2}-\d{2}$/.test(p.start)).map(p=>({start:p.start,mode:p.mode==="end"?"end":"days",days:Math.max(1,parseInt(p.days)||1),end:p.end||p.start}));
+    if(!ok.length)throw 0;
+    periods=ok;update();const r0=range(periods[0]);if(r0)go(parse(r0[0]).getFullYear());
+    msg(`${ok.length} período(s) importado(s). Os períodos anteriores foram substituídos.`);
+  }catch(e){msg("Não foi possível importar: o arquivo precisa ser um .json exportado por esta página.")}
+});
+document.getElementById("png").addEventListener("click",()=>{
+  const rs=periods.map(range);const v=rs.filter(Boolean);
+  if(!v.length)return msg("Adicione ao menos um período para exportar o PNG.");
+  const a=parse(v.map(r=>r[0]).sort()[0]),b=parse(v.map(r=>r[1]).sort().at(-1));
+  const months=[];let y=a.getFullYear(),m=a.getMonth();
+  while(y<b.getFullYear()||(y===b.getFullYear()&&m<=b.getMonth())){months.push([y,m]);if(++m>11){m=0;y++}}
+  const cs=getComputedStyle(document.documentElement),V=n=>cs.getPropertyValue(n).trim();
+  const cols=Math.min(3,months.length),rows=Math.ceil(months.length/cols);
+  const cell=40,mw=cell*7,mh=40+24+cell*6,gap=32,pad=40;
+  const holYears={};months.forEach(([y])=>{holYears[y]=holYears[y]||holidays(y)});
+  const used=rs.map((r,i)=>r?i:-1).filter(i=>i>=0);
+  const legendH=28*used.length+20;
+  const W=pad*2+cols*mw+(cols-1)*gap,Hh=pad*2+60+rows*mh+(rows-1)*gap+legendH;
+  const sc=2,c=document.createElement("canvas");c.width=W*sc;c.height=Hh*sc;
+  const x=c.getContext("2d");x.scale(sc,sc);
+  const F=(w,sz,fam)=>`${w} ${sz}px ${fam}`,disp=V("--display"),body=V("--body");
+  x.fillStyle=V("--bg");x.fillRect(0,0,W,Hh);
+  x.fillStyle=V("--fg");x.font=F(700,26,disp);x.textBaseline="alphabetic";x.fillText("Calendário de Períodos",pad,pad+26);
+  const rr=(X,Y,w,h,r)=>{x.beginPath();x.roundRect(X,Y,w,h,r)};
+  months.forEach(([y,m],i)=>{
+    const ox=pad+(i%cols)*(mw+gap),oy=pad+60+Math.floor(i/cols)*(mh+gap);
+    x.fillStyle=V("--fg");x.font=F(700,18,disp);x.textAlign="left";x.fillText(`${MESES[m]} ${y}`,ox,oy+20);
+    x.font=F(500,11,body);x.fillStyle=V("--muted");x.textAlign="center";
+    DOWS.forEach((d,j)=>x.fillText(d.toUpperCase(),ox+j*cell+cell/2,oy+52));
+    const first=new Date(y,m,1).getDay(),len=new Date(y,m+1,0).getDate(),hol=holYears[y];
+    for(let d=1;d<=len;d++){
+      const k=`${y}-${pad2(m+1)}-${pad2(d)}`,p=first+d-1,cx=ox+(p%7)*cell,cy=oy+64+Math.floor(p/7)*cell,dw=p%7;
+      const idx=rs.findIndex(r=>r&&k>=r[0]&&k<=r[1]);let col=V("--fg"),wt=400;
+      if(dw===0||dw===6)col=V("--muted");
+      if(idx>=0){const r=rs[idx],pc=V(`--p${idx%COLORS}`);
+        if(k===r[0]||k===r[1]){x.fillStyle=pc;rr(cx+2,cy+2,cell-4,cell-4,7);x.fill();col=V("--on")}
+        else{x.globalAlpha=.22;x.fillStyle=pc;rr(cx+2,cy+2,cell-4,cell-4,7);x.fill();x.globalAlpha=1;col=V("--fg")}
+        wt=600}
+      if(hol[k]){x.strokeStyle=V("--hol");x.lineWidth=2;rr(cx+3,cy+3,cell-6,cell-6,6);x.stroke();
+        x.fillStyle=V("--hol");x.beginPath();x.arc(cx+cell-9,cy+9,3,0,7);x.fill();if(idx<0){col=V("--hol");wt=700}}
+      x.fillStyle=col;x.font=F(wt,14,body);x.textAlign="center";x.fillText(String(d),cx+cell/2,cy+cell/2+5);
+    }
+  });
+  let ly=pad+60+rows*mh+(rows-1)*gap+24;x.textAlign="left";
+  used.forEach(i=>{const r=rs[i];x.fillStyle=V(`--p${i%COLORS}`);x.beginPath();x.arc(pad+6,ly-5,6,0,7);x.fill();
+    x.fillStyle=V("--fg");x.font=F(500,14,body);x.fillText(`${fmt(r[0])} → ${fmt(r[1])}  ·  ${diff(r[0],r[1])+1} dias`,pad+20,ly);ly+=28});
+  c.toBlob(bl=>{download("calendario.png",bl);msg(`PNG exportado com ${months.length} mês(es).`)},"image/png");
+});
+const pad2=pad;
 renderEditor();renderCalendar();
 </script>
 </html>
