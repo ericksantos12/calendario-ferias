@@ -5,5 +5,20 @@
       "maxFindings": 5,
       "maxChars": 8000
     }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "icon-tile-stack",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-12T18:31:59.788Z",
+        "reason": "Agent: no icon tiles in this page; the rounded squares are legend swatches for calendar day states, placed before the year nav heading"
+      }
+    ]
   }
 }

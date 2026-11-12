@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T19:10:00Z",
+  "title": "Design System: Calendário de Férias",
+  "extensions": {
+    "colorMeta": {
+      "period-0": { "role": "primary", "displayName": "Azul Agenda", "canonical": "#2563eb", "tonalRamp": ["#0b1d4d", "#123080", "#1c48b8", "#2563eb", "#5f8dff", "#90b0ff", "#c2d3ff", "#e8eefe"] },
+      "period-1": { "role": "secondary", "displayName": "Verde Esmeralda", "canonical": "#12a37a" },
+      "period-2": { "role": "secondary", "displayName": "Âmbar", "canonical": "#d9822b" },
+      "period-3": { "role": "secondary", "displayName": "Violeta", "canonical": "#7c3aed" },
+      "period-4": { "role": "secondary", "displayName": "Framboesa", "canonical": "#e0457b" },
+      "period-5": { "role": "secondary", "displayName": "Ciano", "canonical": "#0e9fbf" },
+      "holiday": { "role": "tertiary", "displayName": "Vermelho Feriado", "canonical": "#e5484d", "tonalRamp": ["#4a0f11", "#7a1a1d", "#b02a2e", "#e5484d", "#ec7175", "#f29a9d", "#f8c5c7", "#fdeced"] },
+      "bg": { "role": "neutral", "displayName": "Papel Frio", "canonical": "#f6f7fb" },
+      "card": { "role": "neutral", "displayName": "Folha", "canonical": "#ffffff" },
+      "fg": { "role": "neutral", "displayName": "Tinta", "canonical": "#1b1f2e", "tonalRamp": ["#11131a", "#1b1f2e", "#2a2e3c", "#6b7186", "#9298ad", "#e3e6ef", "#f1f3f8", "#f6f7fb"] },
+      "muted": { "role": "neutral", "displayName": "Grafite Suave", "canonical": "#5f6577" },
+      "line": { "role": "neutral", "displayName": "Fio", "canonical": "#e3e6ef" },
+      "field": { "role": "neutral", "displayName": "Bandeja", "canonical": "#f1f3f8" },
+      "dark-on-accent": { "role": "neutral", "displayName": "Tinta sobre cor (escuro)", "canonical": "#11131a" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Título da página." },
+      "headline": { "displayName": "Ano", "purpose": "Ano na barra de navegação." },
+      "title": { "displayName": "Mês / Cartão", "purpose": "Nome do mês e títulos de cartão." },
+      "day": { "displayName": "Dia", "purpose": "Números da grade, tabulares." },
+      "label": { "displayName": "Rótulo", "purpose": "Rótulos de campo e dias da semana, uppercase." }
+    },
+    "shadows": [
+      { "name": "holiday-ring", "value": "inset 0 0 0 2px var(--hol)", "purpose": "Anel de feriado no dia; não é elevação." }
+    ],
+    "motion": [],
+    "breakpoints": [ { "name": "mobile", "value": "640px" } ]
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Ação principal: adicionar período.", "html": "<button class=\"ds-btn\">+ Adicionar período</button>", "css": ".ds-btn{font:600 1rem Inter,system-ui,sans-serif;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:#2563eb;color:#fff}.ds-btn:focus-visible{outline:2px solid #2563eb;outline-offset:2px}" },
+    { "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost", "description": "Ações secundárias: importar, exportar.", "html": "<button class=\"ds-btn-ghost\">Exportar PNG</button>", "css": ".ds-btn-ghost{font:500 1rem Inter,system-ui,sans-serif;border:1px solid #e3e6ef;border-radius:8px;padding:9px 14px;cursor:pointer;background:transparent;color:#6b7186}.ds-btn-ghost:hover{color:#1b1f2e}.ds-btn-ghost:focus-visible{outline:2px solid #2563eb;outline-offset:2px}" },
+    { "name": "Segmented Control", "kind": "chip", "refersTo": "segmented", "description": "Escolha entre Qtd. dias e Data fim.", "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Qtd. dias</button><button aria-pressed=\"false\">Data fim</button></div>", "css": ".ds-seg{display:inline-flex;border:1px solid #e3e6ef;border-radius:8px;overflow:hidden;background:#fff}.ds-seg button{font:.85rem Inter,system-ui,sans-serif;border:0;background:transparent;color:#6b7186;padding:7px 10px;cursor:pointer}.ds-seg button[aria-pressed=true]{background:#1b1f2e;color:#f6f7fb}" },
+    { "name": "Date Field", "kind": "input", "refersTo": "input", "description": "Campo com rótulo uppercase.", "html": "<label class=\"ds-f\"><span>Início</span><input type=\"date\" value=\"2026-12-21\"></label>", "css": ".ds-f{display:flex;flex-direction:column;gap:4px;font-family:Inter,system-ui,sans-serif}.ds-f span{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7186}.ds-f input{font:inherit;color:#1b1f2e;background:#fff;border:1px solid #e3e6ef;border-radius:8px;padding:7px 9px}.ds-f input:focus-visible{outline:2px solid #2563eb;outline-offset:2px}" },
+    { "name": "Year Nav", "kind": "nav", "refersTo": "button-year", "description": "Paginação de ano.", "html": "<div class=\"ds-yn\"><button>‹</button><h2>2026</h2><button>›</button></div>", "css": ".ds-yn{display:flex;align-items:center;gap:12px}.ds-yn h2{font:700 1.6rem 'Space Grotesk',system-ui,sans-serif;margin:0;font-variant-numeric:tabular-nums}.ds-yn button{font-size:1.3rem;width:40px;height:40px;border-radius:10px;border:1px solid #e3e6ef;background:#fff;color:#1b1f2e;cursor:pointer}.ds-yn button:hover{border-color:#2563eb}" },
+    { "name": "Day Cells", "kind": "custom", "refersTo": "day-cell", "description": "Estados do dia: normal, fim de semana, período, borda, feriado.", "html": "<div class=\"ds-g\"><span class=\"d\">2</span><span class=\"d we\">6</span><span class=\"d edge\">21</span><span class=\"d in\">22</span><span class=\"d in hol\">25</span><span class=\"d edge\">29</span><span class=\"d hol\">1</span></div>", "css": ".ds-g{display:grid;grid-template-columns:repeat(7,36px);gap:4px;font:.82rem Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;--c:#2563eb}.ds-g .d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;position:relative;color:#1b1f2e}.ds-g .we{color:#6b7186}.ds-g .in{background:color-mix(in srgb,var(--c) 22%,transparent);font-weight:600}.ds-g .edge{background:var(--c);color:#fff;font-weight:600}.ds-g .hol{box-shadow:inset 0 0 0 2px #e5484d}.ds-g .hol:not(.in):not(.edge){color:#e5484d;font-weight:700}.ds-g .hol::after{content:'';position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#e5484d}" }
+  ],
+  "narrative": {
+    "northStar": "O Planner de Mesa",
+    "overview": "Papel limpo, grade precisa, cor só onde há significado. A página se comporta como um planner anual sobre a mesa: fundo frio e claro, cartões brancos de borda fina, e a grade dos meses como protagonista. Nada compete com as datas; a cor existe para marcar períodos e feriados, não para decorar.\n\nDensidade média, coluna única de até 900px. Componentes discretos e precisos: bordas de 1px, cantos suaves, pouco peso tipográfico fora dos títulos. Tema claro e escuro seguem o sistema, com override por data-theme. O que está na tela precisa exportar limpo para PNG, então a hierarquia é feita por cor e peso, nunca por efeitos.",
+    "keyCharacteristics": [
+      "Grade de meses é o herói; controles ficam acima e recuam visualmente.",
+      "Cor semântica: cada período tem sua cor; vermelho é exclusivo de feriado.",
+      "Flat: profundidade só por tom (bg → card → field) e borda fina.",
+      "Números tabulares em toda data e contagem.",
+      "Funciona igual em celular e desktop."
+    ],
+    "rules": [
+      { "name": "The Red Is Holiday Rule", "body": "Vermelho só significa feriado (ou remoção no hover). Nunca use para período, alerta genérico ou ênfase.", "section": "colors" },
+      { "name": "The Color Means Period Rule", "body": "Cor saturada na grade sempre corresponde a um período da legenda. Não há cor decorativa.", "section": "colors" },
+      { "name": "The Tabular Dates Rule", "body": "Toda data, contagem de dias e ano usa font-variant-numeric: tabular-nums.", "section": "typography" },
+      { "name": "The Flat Paper Rule", "body": "Superfícies não flutuam. Separação por tom e fio, nunca por sombra.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar tokens --p0…--p5 para períodos, na ordem, e o par dark-* no tema escuro.",
+      "Do marcar estados de dia combinando fundo, anel e ponto, para feriado dentro de período continuar legível.",
+      "Do manter bordas de 1px line e raios da escala (6/8/10/12px).",
+      "Do usar números tabulares em datas e contagens.",
+      "Do testar cada mudança visual também no PNG exportado e em 375px."
+    ],
+    "donts": [
+      "Don't usar vermelho para qualquer coisa que não seja feriado ou remoção.",
+      "Don't adicionar sombras de elevação, gradientes ou brilhos; o sistema é flat.",
+      "Don't introduzir uma terceira família tipográfica.",
+      "Don't usar cor decorativa na grade que não corresponda a um item da legenda."
+    ]
+  }
+}
