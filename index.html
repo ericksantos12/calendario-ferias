@@ -1,0 +1,228 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calendário de Períodos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box}
+/* Layout: editor de períodos no topo, grade de meses (auto), listas de resumo e feriados */
+:root{
+  --bg:#f6f7fb; --card:#ffffff; --fg:#1b1f2e; --muted:#6b7186; --line:#e3e6ef; --field:#f1f3f8;
+  --hol:#e5484d; --on:#ffffff;
+  --p0:#2f6bff; --p1:#12a37a; --p2:#d9822b; --p3:#8b5cf6; --p4:#e0457b; --p5:#0e9fbf;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11131a; --card:#191c26; --fg:#e8eaf2; --muted:#9298ad; --line:#2a2e3c; --field:#222634;
+  --hol:#ff6b6f; --p0:#6b95ff; --p1:#3cc79c; --p2:#f0a052; --p3:#a78bfa; --p4:#f472a0; --p5:#38c3e0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131a; --card:#191c26; --fg:#e8eaf2; --muted:#9298ad; --line:#2a2e3c; --field:#222634;
+  --hol:#ff6b6f; --p0:#6b95ff; --p1:#3cc79c; --p2:#f0a052; --p3:#a78bfa; --p4:#f472a0; --p5:#38c3e0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:1.9rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+h3{font-family:var(--display);margin:0 0 12px;font-size:1rem}
+.editor{display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:14px 1fr auto 1fr auto auto;align-items:end;gap:10px;padding:10px;border-radius:10px;background:var(--field)}
+.row .dot{width:14px;height:14px;border-radius:50%;align-self:center}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0;width:100%;box-sizing:border-box}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.seg button{font:inherit;font-size:.85rem;border:0;background:transparent;color:var(--muted);padding:7px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.info{font-size:.85rem;color:var(--muted);white-space:nowrap;align-self:center;font-variant-numeric:tabular-nums}
+.del{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;width:34px;height:34px;cursor:pointer}
+.del:hover{color:var(--hol);border-color:var(--hol)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--p0);color:var(--on)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--p0);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.88rem}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px}
+.yearnav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
+.yearnav h2{font-family:var(--display);font-size:1.6rem;margin:0;min-width:4ch;text-align:center;font-variant-numeric:tabular-nums}
+.ybtn{font:inherit;font-size:1.3rem;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+.ybtn:hover{border-color:var(--p0)}
+.yearnav .btn{margin-left:auto}
+.month h2{font-family:var(--display);font-size:1.05rem;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-variant-numeric:tabular-nums}
+.dow{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding-bottom:4px}
+.d{aspect-ratio:1;max-width:100%;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:.82rem;position:relative}
+.d.we{color:var(--muted)}
+.d.in{background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--fg);font-weight:600}
+.d.edge{background:var(--c);color:var(--on);font-weight:600}
+.d.hol{box-shadow:inset 0 0 0 2px var(--hol)}
+.d.hol:not(.in):not(.edge){color:var(--hol);font-weight:700}
+.d.hol::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--hol)}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+ul.l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.l li{display:flex;justify-content:space-between;gap:12px;font-size:.92rem;align-items:baseline}
+ul.l li b{font-variant-numeric:tabular-nums;white-space:nowrap}
+ul.l li small{color:var(--muted);display:block}
+.note{color:var(--muted);font-size:.82rem;margin:10px 0 0}
+.empty{color:var(--muted);font-size:.9rem}
+@media (max-width:640px){
+  .row{grid-template-columns:14px 1fr 1fr;}
+  .row .seg{grid-column:2 / 4;justify-self:start}
+  .row .fval{grid-column:2 / 3}
+  .row .info{grid-column:3 / 4}
+  .row .del{grid-column:3;justify-self:end;grid-row:1}
+  .row .fstart{grid-column:2 / 3;grid-row:1}
+}
+</style>
+<div class="wrap">
+  <header>
+    <h1>Calendário de Períodos</h1>
+    <p class="sub">Dias corridos, incluindo fins de semana. O dia de início conta como o 1º dia.</p>
+  </header>
+
+  <section class="card">
+    <h3>Períodos</h3>
+    <div class="editor" id="editor"></div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" id="add" type="button">+ Adicionar período</button>
+      <button class="btn ghost" id="reset" type="button">Restaurar exemplo</button>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span><i style="width:16px;height:16px;border-radius:4px;background:var(--p0)"></i>Início / fim</span>
+    <span><i style="width:16px;height:16px;border-radius:4px;background:color-mix(in srgb,var(--p0) 22%,transparent)"></i>Dentro do período</span>
+    <span><i style="width:16px;height:16px;border-radius:4px;box-shadow:inset 0 0 0 2px var(--hol)"></i>Feriado</span>
+  </div>
+
+  <nav class="yearnav" aria-label="Ano">
+    <button type="button" class="ybtn" id="prev" aria-label="Ano anterior">‹</button>
+    <h2 id="year">2027</h2>
+    <button type="button" class="ybtn" id="next" aria-label="Próximo ano">›</button>
+    <button type="button" class="btn ghost" id="today">Ano atual</button>
+  </nav>
+
+  <div class="months" id="months"></div>
+
+  <div class="lists">
+    <div class="card"><h3>Resumo</h3><ul class="l" id="plist"></ul></div>
+    <div class="card"><h3 id="htitle">Feriados</h3><ul class="l" id="hlist"></ul>
+      <p class="note">Carnaval, Quarta de Cinzas e Corpus Christi são ponto facultativo. Feriados estaduais e municipais não estão incluídos.</p></div>
+  </div>
+</div>
+<script>
+const COLORS=6, KEY="calendario-periodos-v1";
+const DEFAULT=[
+  {start:"2027-01-25",mode:"days",days:5,end:"2027-01-29"},
+  {start:"2027-04-06",mode:"days",days:15,end:"2027-04-20"}
+];
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DOWS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"], WD=["dom","seg","ter","qua","qui","sex","sáb"];
+
+let periods;
+try{periods=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!Array.isArray(periods)||!periods.length)periods=structuredClone(DEFAULT);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(periods))}catch(e){}};
+
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const diff=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const fmt=s=>{const d=parse(s);return `${WD[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`};
+
+function range(p){
+  if(!p.start)return null;
+  if(p.mode==="days"){const n=Math.max(1,parseInt(p.days)||1);return[p.start,addDays(p.start,n-1)]}
+  if(!p.end)return null;
+  return p.end<p.start?[p.end,p.start]:[p.start,p.end];
+}
+
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return iso(new Date(y,mo-1,da))}
+function holidays(y){
+  const e=easter(y),o={};
+  o[`${y}-01-01`]="Confraternização Universal";
+  o[addDays(e,-48)]="Carnaval (segunda)";o[addDays(e,-47)]="Carnaval (terça)";o[addDays(e,-46)]="Quarta-feira de Cinzas";
+  o[addDays(e,-2)]="Sexta-feira Santa";o[e]="Páscoa";
+  o[`${y}-04-21`]="Tiradentes";o[`${y}-05-01`]="Dia do Trabalho";o[addDays(e,60)]="Corpus Christi";
+  o[`${y}-09-07`]="Independência";o[`${y}-10-12`]="Nossa Senhora Aparecida";o[`${y}-11-02`]="Finados";
+  o[`${y}-11-15`]="Proclamação da República";o[`${y}-11-20`]="Consciência Negra";o[`${y}-12-25`]="Natal";
+  return o;
+}
+
+const editor=document.getElementById("editor");
+function renderEditor(){
+  editor.innerHTML="";
+  periods.forEach((p,i)=>{
+    const r=range(p),c=`var(--p${i%COLORS})`;
+    const row=document.createElement("div");row.className="row";
+    row.innerHTML=`
+      <span class="dot" style="background:${c}"></span>
+      <div class="f fstart"><label for="s${i}">Início</label><input type="date" id="s${i}" value="${p.start||""}"></div>
+      <div class="seg" role="group" aria-label="Tipo">
+        <button type="button" data-m="days" aria-pressed="${p.mode==="days"}">Qtd. dias</button>
+        <button type="button" data-m="end" aria-pressed="${p.mode==="end"}">Data fim</button>
+      </div>
+      <div class="f fval">${p.mode==="days"
+        ?`<label for="v${i}">Dias</label><input type="number" min="1" id="v${i}" value="${p.days||1}">`
+        :`<label for="v${i}">Fim</label><input type="date" id="v${i}" value="${p.end||""}">`}</div>
+      <span class="info">${r?(p.mode==="days"?`até ${fmt(r[1]).split(", ")[1]}`:`${diff(r[0],r[1])+1} dias`):"—"}</span>
+      <button type="button" class="del" aria-label="Remover período" title="Remover">✕</button>`;
+    row.querySelector(`#s${i}`).addEventListener("change",e=>{p.start=e.target.value;update()});
+    row.querySelector(`#v${i}`).addEventListener("change",e=>{if(p.mode==="days")p.days=Math.max(1,parseInt(e.target.value)||1);else p.end=e.target.value;update()});
+    row.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+      if(p.mode===b.dataset.m)return;
+      const cur=range(p);
+      if(b.dataset.m==="end"){p.end=cur?cur[1]:p.start}else{p.days=cur?diff(cur[0],cur[1])+1:1}
+      p.mode=b.dataset.m;update();
+    }));
+    row.querySelector(".del").addEventListener("click",()=>{periods.splice(i,1);update()});
+    editor.appendChild(row);
+  });
+  if(!periods.length)editor.innerHTML=`<p class="empty">Nenhum período. Clique em “Adicionar período”.</p>`;
+}
+
+function renderCalendar(){
+  const rs=periods.map(range);
+  const y=viewYear,H={[y]:holidays(y)},hol=H[y],root=document.getElementById("months");root.innerHTML="";
+  document.getElementById("year").textContent=y;
+  document.getElementById("htitle").textContent=`Feriados de ${y}`;
+  const shown=[];
+  for(let m=0;m<12;m++){
+    const first=new Date(y,m,1).getDay(),len=new Date(y,m+1,0).getDate();
+    let h=`<h2>${MESES[m]} ${y}</h2><div class="grid">`+DOWS.map(d=>`<div class="dow">${d}</div>`).join("");
+    for(let i=0;i<first;i++)h+="<div></div>";
+    for(let d=1;d<=len;d++){
+      const k=`${y}-${pad(m+1)}-${pad(d)}`,dw=(first+d-1)%7,c=["d"];let st="",tip=[];
+      if(dw===0||dw===6)c.push("we");
+      const idx=rs.findIndex(r=>r&&k>=r[0]&&k<=r[1]);
+      if(idx>=0){const r=rs[idx];c.push(k===r[0]||k===r[1]?"edge":"in");st=` style="--c:var(--p${idx%COLORS})"`;tip.push(`Período ${idx+1}`)}
+      if(hol[k]){c.push("hol");tip.push(hol[k]);shown.push(k)}
+      h+=`<div class="${c.join(" ")}"${st} title="${tip.join(" · ")}">${d}</div>`;
+    }
+    const sec=document.createElement("section");sec.className="card month";sec.innerHTML=h+"</div>";root.appendChild(sec);
+  }
+  document.getElementById("hlist").innerHTML=shown.length?shown.map(k=>{
+    const inP=rs.some(r=>r&&k>=r[0]&&k<=r[1]);
+    return `<li><span>${H[parse(k).getFullYear()][k]}${inP?"<small>dentro de um período</small>":""}</span><b>${fmt(k)}</b></li>`}).join("")
+    :`<li class="empty">Nenhum feriado nos meses exibidos.</li>`;
+  shown.sort();
+  document.getElementById("plist").innerHTML=rs.map((r,i)=>r?`<li><span style="display:flex;gap:8px;align-items:center"><i style="width:10px;height:10px;border-radius:50%;background:var(--p${i%COLORS})"></i><span>${fmt(r[0])} → ${fmt(r[1])}</span></span><b>${diff(r[0],r[1])+1} dias</b></li>`:"").join("")||`<li class="empty">Nenhum período válido.</li>`;
+}
+
+let viewYear=(()=>{const r=periods.map(range).filter(Boolean).map(r=>r[0]).sort()[0];return r?parse(r).getFullYear():new Date().getFullYear()})();
+const go=y=>{viewYear=y;renderCalendar()};
+document.getElementById("prev").addEventListener("click",()=>go(viewYear-1));
+document.getElementById("next").addEventListener("click",()=>go(viewYear+1));
+document.getElementById("today").addEventListener("click",()=>go(new Date().getFullYear()));
+document.addEventListener("keydown",e=>{if(e.target.matches("input,select"))return;if(e.key==="ArrowLeft")go(viewYear-1);if(e.key==="ArrowRight")go(viewYear+1)});
+function update(){save();renderEditor();renderCalendar()}
+document.getElementById("add").addEventListener("click",()=>{
+  const last=periods.map(range).filter(Boolean).map(r=>r[1]).sort().at(-1);
+  const s=last?addDays(last,7):iso(new Date());
+  periods.push({start:s,mode:"days",days:7,end:addDays(s,6)});update();
+});
+document.getElementById("reset").addEventListener("click",()=>{periods=structuredClone(DEFAULT);update()});
+renderEditor();renderCalendar();
+</script>
+</html>
